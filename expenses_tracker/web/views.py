@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 
-from expenses_tracker.web.forms import CreateProfileForm
-from expenses_tracker.web.models import Profile
+from expenses_tracker.web.forms import CreateProfileForm, EditProfileForm, DeleteProfileForm
+from expenses_tracker.web.models import Profile, Expense
 
 
 def get_profile():
@@ -31,29 +31,39 @@ def delete_expense(request, pk):
 
 
 def show_profile(request):
-    return render(request, 'profile.html')
+    profile = get_profile()
+    expenses = Expense.objects.all()
+    budget_left = profile.budget - sum(e.price for e in expenses)
+    context = {
+        'profile': profile,
+        'expenses_count': len(expenses),
+        'budget_left': budget_left,
+    }
+    return render(request, 'profile.html', context)
 
 
 def create_profile(request):
     if request.method == "GET":
         form = CreateProfileForm()
     else:
-        form = CreateProfileForm(request.POST)
+        form = CreateProfileForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('show index')
 
     context = {
         'form': form,
+        'no_profile': True,
     }
     return render(request, 'home-no-profile.html', context)
 
 
 def edit_profile(request):
+    profile = get_profile()
     if request.method == "GET":
-        form = CreateProfileForm()
+        form = EditProfileForm(instance=profile)
     else:
-        form = CreateProfileForm(request.POST)
+        form = EditProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
             return redirect('show index')
@@ -65,5 +75,17 @@ def edit_profile(request):
 
 
 def delete_profile(request):
-    return render(request, 'profile-delete.html')
+    profile = get_profile()
+    if request.method == "GET":
+        form = DeleteProfileForm(instance=profile)
+    else:
+        form = DeleteProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect('show index')
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'profile-delete.html', context)
 
