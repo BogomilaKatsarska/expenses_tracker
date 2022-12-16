@@ -1,4 +1,4 @@
-# 2:38
+# 2:42
 """
 Django settings for expenses_tracker project.
 
